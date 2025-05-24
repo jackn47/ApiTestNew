@@ -17,7 +17,7 @@ public class TestDataGenerator {
 
         String firstName = faker.name().firstName();
         String lastName = faker.name().lastName();
-        String email = "danfirst69+AT+" + UUID.randomUUID() + "@gmail.com";
+        String email = "danzyx47+AT+" + UUID.randomUUID() + "@gmail.com";
         String login = faker.name().username() + System.currentTimeMillis();
         String birthDay = String.format("%02d", faker.number().numberBetween(1, 28));
         String birthMonth = String.format("%02d", faker.number().numberBetween(1, 12));
@@ -73,6 +73,14 @@ public class TestDataGenerator {
                 .login("danfirst69+test@gmail.com")
                 .password("Casino123!")
                 .useJwt(1)
+                .build();
+    }
+
+    public static AuthRequest generateInvalidAuthRequest() {
+        return AuthRequest.builder()
+                .login("danfirst69+test")
+                .password("casino")
+                .useJwt(3)
                 .build();
     }
 }

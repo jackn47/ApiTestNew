@@ -18,4 +18,11 @@ public class AuthService extends BaseApiService {
                 .body("status", equalTo("success"))
                 .extract().response();
     }
+
+    public Response loginWithoutValidation(AuthRequest authRequest) {
+        return baseRequest()
+                .body(authRequest)
+                .when()
+                .put("/api/v1/auth");
+    }
 }

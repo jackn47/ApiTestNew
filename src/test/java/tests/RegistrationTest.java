@@ -1,25 +1,29 @@
 package tests;
 
+import io.qameta.allure.*;
 import org.example.models.RegistrationRequest;
-import org.example.utils.TestDataGenerator;
 import org.junit.jupiter.api.Test;
 
-import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.equalTo;
+import java.io.IOException;
+import java.security.GeneralSecurityException;
 
+@Epic("Registration")
+@Feature("User Registration")
 public class RegistrationTest extends BaseTest {
 
-    @Test
-    public void testValidRegistration() {
-        RegistrationRequest validRegistrationRequest = TestDataGenerator.generateValidRegistrationRequest();
+    private final AllureSteps steps;
 
-        given()
-                .spec(baseRequestSpec)
-                .body(validRegistrationRequest)
-        .when()
-                .post("/api/v1/profiles")
-        .then()
-                .spec(baseResponseSpec)
-                .body("data.result", equalTo(true));
+    public RegistrationTest() throws GeneralSecurityException, IOException {
+        this.steps = new AllureSteps();
+    }
+
+    @Test
+    @Story("Valid registration")
+    @Severity(SeverityLevel.BLOCKER)
+    @Description("Регистрация нового пользователя с валидными данными")
+    public void testValidRegistration() {
+        RegistrationRequest validRegistrationRequest = steps.generateRegistrationData();
+
+        steps.registerUser(validRegistrationRequest);
     }
 }

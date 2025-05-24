@@ -14,6 +14,7 @@ import com.google.api.services.gmail.model.ListMessagesResponse;
 import com.google.api.services.gmail.model.Message;
 import com.google.api.services.gmail.model.MessagePart;
 import io.restassured.RestAssured;
+import io.restassured.response.Response;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -109,7 +110,7 @@ public class GmailService {
                 System.out.println("Ошибка: " + e.getMessage());
                 if (attempt == maxAttempts) {
                     throw new RuntimeException(
-                            String.format("❌ Не удалось получить ссылку подтверждения на %s после %d попыток", email, maxAttempts), e);
+                            String.format("Не удалось получить ссылку подтверждения на %s после %d попыток", email, maxAttempts), e);
                 }
                 sleep(15000);
             }
@@ -171,10 +172,54 @@ public class GmailService {
                     .when()
                     .get(confirmationLink)
                     .then()
-                    .statusCode(200); // или 3xx — зависит от реализации
+                    .log().all()
+                    .statusCode(200);
         } else {
             throw new RuntimeException("Confirmation link not found in email");
         }
+    }
+
+    public String confirmEmailAndGetJwt(String userEmail) throws GeneralSecurityException, IOException {
+        String confirmationLink = waitForConfirmationLink(userEmail, 3); // Получаем ссылку из письма
+
+        if (confirmationLink == null) {
+            throw new RuntimeException("Confirmation link not found in email");
+        }
+
+        String code = extractCodeFromLink(confirmationLink);
+        if (code == null) {
+            throw new RuntimeException("Confirmation code not found in link");
+        }
+
+        // Отправляем PATCH запрос с code и useJwt = true
+        String requestBody = String.format("{\"code\":\"%s\",\"useJwt\":true}", code);
+
+        Response response = RestAssured
+                .given()
+                .header("Content-Type", "text/plain")
+                .body(requestBody)
+                .when()
+                .patch("https://test-devcasino.egamings.com/api/v1/profiles?lang=ru")
+                .then()
+                .statusCode(200)
+                .extract()
+                .response();
+
+        String jwt = response.path("data.jwtToken");
+        if (jwt == null) {
+            throw new RuntimeException("JWT token not found in response");
+        }
+
+        return jwt;
+    }
+
+    private String extractCodeFromLink(String link) {
+        Pattern pattern = Pattern.compile("code=([a-fA-F0-9]+)");
+        Matcher matcher = pattern.matcher(link);
+        if (matcher.find()) {
+            return matcher.group(1);
+        }
+        return null;
     }
 
     private void checkInboxContent() throws Exception {
